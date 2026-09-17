@@ -1,0 +1,24 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/go-postgres
+{
+	"name": "Go & PostgreSQL",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+	"features": {
+		"ghcr.io/devcontainers/features/git:1": {
+			"version": "os-provided"
+		},
+		"ghcr.io/devcontainers-extra/features/bun:1": {}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"Vue.volar",
+				"golang.go",
+				"dbaeumer.vscode-eslint"
+			]
+		}
+	},
+	"postCreateCommand": "cd backend && go mod tidy && cd ../frontend && bun install"
+}
