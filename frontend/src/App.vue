@@ -1,11 +1,28 @@
-<script setup lang="ts"></script>
+<script setup>
+  
+  
+</script>
 
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <header>
+    <router-link to="/">Logo</router-link>
+    <nav>
+      <router-link to="/about">About</router-link>
+
+    </nav>
+  </header>
+  <router-view></router-view>
 </template>
 
-<style scoped></style>
+<style scoped>
+header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+
+  nav {
+    display: flex;
+    gap: 1rem;
+  }
+}
+</style>

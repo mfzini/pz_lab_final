@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/go-postgres
 {
-	"name": "Go & PostgreSQL",
+	"name": "Go & MariaDB",
 	"dockerComposeFile": "docker-compose.yml",
 	"service": "app",
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
@@ -20,5 +20,9 @@
 			]
 		}
 	},
+	"forwardPorts": [
+		3000,
+		5173
+	],
 	"postCreateCommand": "cd backend && go mod tidy && cd ../frontend && bun install"
 }

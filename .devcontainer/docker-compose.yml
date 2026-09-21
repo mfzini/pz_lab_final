@@ -25,22 +25,14 @@ services:
     # (Adding the "ports" property to this file will not forward from a Codespace.)
 
   db:
-    image: postgres:latest
-    restart: unless-stopped
-
-    # Health check ensures PostgreSQL is ready before dependent services start
-    # This is critical for depends_on with condition: service_healthy to work properly
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 10s # Check every 10 seconds
-      timeout: 5s # Wait up to 5 seconds for response
-      retries: 5 # Retry 5 times before marking as unhealthy
-      start_period: 30s # Give PostgreSQL 30 seconds to start before health checks begin
-
-    volumes:
-      - postgres-data:/var/lib/postgresql:z
+    image: mariadb:latest
+    restart: always
     env_file:
-      # Ensure that the variables in .env match the same variables in devcontainer.json
-      - .env
-    # Add "forwardPorts": ["5432"] to **devcontainer.json** to forward PostgreSQL locally.
-    # (Adding the "ports" property to this file will not forward from a Codespace.)
+       - .env
+    volumes:
+      - mariadb-data:/var/lib/mysql:z
+    ports:
+      - "3306:3306"
+volumes:
+  mariadb-data:
+ 
