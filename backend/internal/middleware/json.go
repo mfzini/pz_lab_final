@@ -8,3 +8,7 @@ func UseJson(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+var JsonMiddleware http.HandlerFunc = (func(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+})

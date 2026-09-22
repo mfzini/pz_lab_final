@@ -12,7 +12,7 @@ type PeopleRepo struct{}
 func (repo *PeopleRepo) Save(p *models.Person) (int64, error) {
 	query := "insert into people (id, name, surname, email, phone) values (?, ?, ?, ?, ?)"
 	stmt, _ := db.PrepareStatement(query)
-	r, err := stmt.Exec(p.Id, p.Name, p.Surname, p.Email, p.Phone)
+	r, err := stmt.Exec(p.Id.String(), p.Name, p.Surname, p.Email, p.Phone)
 	if err != nil {
 		return 0, err
 	}

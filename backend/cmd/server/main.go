@@ -3,16 +3,19 @@ package main
 import (
 	"example/internal/controllers"
 	"example/internal/middleware"
+	"example/internal/server"
+	"fmt"
 	"net/http"
 )
 
 func main() {
-	mux := http.NewServeMux()
+	app := server.New()
+	app.Use(middleware.CorsMiddleware)
+	app.Use(middleware.JsonMiddleware)
+	app.Use(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("meow")
+	})
+	app.Handle("GET /person", controllers.FindByEmail)
 
-	middleware.UseJson(mux)
-	middleware.UseCors(mux)
-
-	controllers.SetupPersonHandlers(mux)
-
-	http.ListenAndServe(":3000", mux)
+	app.ListenAndServe(":3000")
 }
