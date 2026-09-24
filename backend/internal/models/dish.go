@@ -2,8 +2,8 @@ package models
 
 type Dish struct {
 	Id,
+	Picture,
 	Name string
-	Ingredients []Ingredient
-	Price       float64
+	Price float64
 	TimeStamps
 }

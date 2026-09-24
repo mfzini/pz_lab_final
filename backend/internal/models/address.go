@@ -4,7 +4,8 @@ type Address struct {
 	Id,
 	Street,
 	House,
-	Door,
 	Location string
+	Floor,
+	Door int
 	TimeStamps
 }

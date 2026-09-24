@@ -1,6 +1,3 @@
-volumes:
-  postgres-data:
-
 services:
   app:
     userns_mode: "keep-id"
@@ -12,27 +9,29 @@ services:
     env_file:
        # Ensure that the variables in .env match the same variables in devcontainer.json
        - .env
-
+    network_mode: service:db
     volumes:
       - ../..:/workspaces:cached,z
 
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
 
-    # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
-    network_mode: service:db
-    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally. 
-    # (Adding the "ports" property to this file will not forward from a Codespace.)
 
   db:
-    image: mariadb:latest
-    restart: always
-    env_file:
-       - .env
+    image: postgres:latest
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s # Check every 10 seconds
+      timeout: 5s # Wait up to 5 seconds for response
+      retries: 5 # Retry 5 times before marking as unhealthy
+      start_period: 30s # Give PostgreSQL 30 seconds to start before health checks begin
     volumes:
-      - mariadb-data:/var/lib/mysql:z
+      - postgres-data:/var/lib/postgresql:z
+    env_file:
+      - .env
     ports:
-      - "3306:3306"
+      - "5432:5432"
+
 volumes:
-  mariadb-data:
- 
+  postgres-data:

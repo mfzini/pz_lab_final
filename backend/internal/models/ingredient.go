@@ -5,4 +5,5 @@ type Ingredient struct {
 	Name string
 	Stock,
 	Ammount float32
+	TimeStamps
 }

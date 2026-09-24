@@ -1,54 +1,29 @@
 package db
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
-	"log"
 	"os"
 	"sync"
-	"time"
 
-	"github.com/go-sql-driver/mysql"
+	"github.com/jackc/pgx/v5"
 )
 
 var (
 	once       sync.Once
-	connection *sql.DB
+	connection *pgx.Conn
 )
 
-func connect() {
+func GetConnection() *pgx.Conn {
 	once.Do(func() {
-		cfg := mysql.NewConfig()
-		cfg.ParseTime = true
-		cfg.User = os.Getenv("MARIADB_USER")
-		cfg.Passwd = os.Getenv("MARIADB_PASSWORD")
-		cfg.DBName = os.Getenv("MARIADB_DATABASE")
-		cfg.Net = "tcp"
-		cfg.Addr = fmt.Sprint(os.Getenv("MARIADB_HOST"), ":", os.Getenv("MARIADB_PORT"))
 		var err error
-		connection, err = sql.Open("mysql", cfg.FormatDSN())
+		connection, err = pgx.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
+			os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD"), os.Getenv("POSTGRES_HOST"),
+			os.Getenv("POSTGRES_PORT"), os.Getenv("POSTGRES_DB")))
 		if err != nil {
 			panic(err)
 		}
-
-		connection.SetConnMaxLifetime(time.Minute * 3)
-		connection.SetMaxOpenConns(10)
-		connection.SetMaxIdleConns(10)
-
-		pingErr := connection.Ping()
-		if pingErr != nil {
-			log.Fatal(pingErr)
-		}
 	})
-}
 
-func PrepareStatement(query string) (*sql.Stmt, error) {
-	if connection == nil {
-		connect()
-	}
-	stmt, err := connection.Prepare(query)
-	if err != nil {
-		return nil, err
-	}
-	return stmt, nil
+	return connection
 }

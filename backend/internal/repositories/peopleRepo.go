@@ -1,72 +1,87 @@
 package repositories
 
 import (
-	"database/sql"
-	"example/internal/db"
+	"context"
 	"example/internal/models"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
-type PeopleRepo struct{}
-
-func (repo *PeopleRepo) Save(p *models.Person) (int64, error) {
-	query := "insert into people (id, name, surname, email, phone) values (?, ?, ?, ?, ?)"
-	stmt, _ := db.PrepareStatement(query)
-	r, err := stmt.Exec(p.Id.String(), p.Name, p.Surname, p.Email, p.Phone)
-	if err != nil {
-		return 0, err
-	}
-	return r.RowsAffected()
+type PeopleRepo struct {
+	Db *pgx.Conn
 }
 
-func (repo *PeopleRepo) FindById(id string) (*models.Person, error) {
-	query := "select * from people where id=?"
-	stmt, _ := db.PrepareStatement(query)
-	r := stmt.QueryRow(id)
-	return parse(r)
+func NewPeopleRepo(connection *pgx.Conn) *PeopleRepo {
+	return &PeopleRepo{Db: connection}
 }
 
-func (repo *PeopleRepo) FindByEmail(email string) (*models.Person, error) {
-	query := "select * from people where email=?"
-	stmt, _ := db.PrepareStatement(query)
-	r := stmt.QueryRow(email)
-	return parse(r)
-}
-
-func (repo *PeopleRepo) Update(p *models.Person) (int64, error) {
-	query := "update people set name=?, surname=?, email=?, phone=?, updatedAt=? where id=?"
-	stmt, _ := db.PrepareStatement(query)
+func (self *PeopleRepo) Create(p *models.Person) error {
+	query := `insert into people (id, name, surname, email, phone, createdAt)
+		values (@id, @name, @surname, @email, @phone)`
 	timestamp := time.Now()
-	r, err := stmt.Exec(p.Name, p.Surname, p.Email, p.Phone, timestamp, p.Id)
-	if err != nil {
-		return 0, err
+	_, err := self.Db.Exec(context.Background(), query,
+		&pgx.NamedArgs{
+			"id":        p.Id,
+			"name":      p.Name,
+			"surname":   p.Surname,
+			"email":     p.Email,
+			"phone":     p.Phone,
+			"createdAt": timestamp,
+		})
+	if err == nil {
+		p.CreatedAt = &timestamp
 	}
-	p.UpdatedAt = &timestamp
-	return r.RowsAffected()
+	return err
 }
 
-func (repo *PeopleRepo) Delete(p *models.Person) (int64, error) {
-	query := "update people set deletedAt=? where id=?"
-	stmt, _ := db.PrepareStatement(query)
+func (self *PeopleRepo) Update(p *models.Person) error {
+	query := `update people set
+	name = @name,
+	surname = @surname,
+	email = @email,
+	phone = @phone,
+	updatedAt = @now
+	where id = @id`
 	timestamp := time.Now()
-	r, err := stmt.Exec(timestamp, p.Id)
-	if err != nil {
-		return 0, err
+	_, err := self.Db.Exec(context.Background(), query, &pgx.NamedArgs{
+		"name":      p.Name,
+		"surname":   p.Surname,
+		"email":     p.Email,
+		"phone":     p.Phone,
+		"updatedAt": timestamp,
+		"id":        p.Id,
+	})
+	if err == nil {
+		p.UpdatedAt = &timestamp
 	}
-	p.DeletedAt = &timestamp
-	return r.RowsAffected()
+	return err
 }
 
-func parse(r *sql.Row) (*models.Person, error) {
-	p := &models.Person{}
-	r.Scan(&p.Id,
-		&p.Name,
-		&p.Surname,
-		&p.Email,
-		&p.Phone,
-		&p.CreatedAt, &p.UpdatedAt, &p.DeletedAt)
-	if p.CreatedAt == nil {
-		p = nil
+func (self *PeopleRepo) Delete(p *models.Person) error {
+	query := "update people set deletedAt=$1 where id=$2"
+	timestamp := time.Now()
+	_, err := self.Db.Exec(context.Background(), query, timestamp, p.Id)
+	if err == nil {
+		p.DeletedAt = &timestamp
 	}
-	return p, nil
+	return err
+}
+
+func (self *PeopleRepo) FindById(id string) (*models.Person, error) {
+	query := "select * from people where id = $1"
+	r, err := self.Db.Query(context.Background(), query, id)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectOneRow(r, pgx.RowToAddrOfStructByName[models.Person])
+}
+
+func (self *PeopleRepo) FindByEmail(email string) (*models.Person, error) {
+	query := "select * from people where email = $1"
+	r, err := self.Db.Query(context.Background(), query, email)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectOneRow(r, pgx.RowToAddrOfStructByName[models.Person])
 }
