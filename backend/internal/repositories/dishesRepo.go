@@ -26,7 +26,7 @@ func NewDishesRepo(connection *pgx.Conn) *DishesRepo {
 }
 
 func (self *DishesRepo) Create(ctx context.Context, dish *models.Dish) error {
-	query := `insert into dishes (id, name, price, createdAt)
+	query := `insert into dishes (id, name, price, created_at)
 		values ($1, $2, $3, $4)`
 	timestamp := time.Now()
 	_, err := self.Db.Exec(ctx, query,
@@ -41,7 +41,7 @@ func (self *DishesRepo) Create(ctx context.Context, dish *models.Dish) error {
 }
 
 func (self *DishesRepo) Update(ctx context.Context, dish *models.Dish) error {
-	query := `update dishes set name = $1, price = $2, updatedAd=$3`
+	query := `update dishes set name = $1, price = $2, updated_at=$3`
 	timestamp := time.Now()
 	_, err := self.Db.Exec(ctx, query,
 		dish.Name,
@@ -54,7 +54,7 @@ func (self *DishesRepo) Update(ctx context.Context, dish *models.Dish) error {
 }
 
 func (self *DishesRepo) Delete(ctx context.Context, dish *models.Dish) error {
-	query := "update dishes set deletedAt = $1 where id = $2"
+	query := "update dishes set deleted_at = $1 where id = $2"
 	timestamp := time.Now()
 	_, err := self.Db.Exec(ctx, query, dish.Id, timestamp)
 	if err == nil {

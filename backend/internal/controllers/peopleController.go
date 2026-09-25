@@ -13,21 +13,6 @@ type Response struct {
 }
 
 func HandlePeople(mux *http.ServeMux, service *services.PeopleService) {
-	mux.HandleFunc("GET /person", func(w http.ResponseWriter, r *http.Request) {
-		query := r.URL.Query()
-		email := query.Get("email")
-		p, err := service.Repo.FindByEmail(email)
-		if err != nil {
-			w.WriteHeader(500)
-			return
-		}
-		if p == nil {
-			w.WriteHeader(404)
-			return
-		}
-		w.WriteHeader(200)
-		json.NewEncoder(w).Encode(p)
-	})
 
 	mux.HandleFunc("GET /person/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -46,14 +31,15 @@ func HandlePeople(mux *http.ServeMux, service *services.PeopleService) {
 
 	mux.HandleFunc("POST /person", func(w http.ResponseWriter, r *http.Request) {
 		p := &models.Person{}
-		err := json.NewDecoder(r.Body).Decode(&p)
-		if err != nil {
+		encoder := json.NewEncoder(w)
+		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			w.WriteHeader(400)
+			encoder.Encode(err)
 			return
 		}
-		err = service.Create(p)
-		if err != nil {
-			w.WriteHeader(500)
+		if err := service.Create(p); err != nil {
+			w.WriteHeader(err.StatusCode)
+			encoder.Encode(err)
 			return
 		}
 		w.WriteHeader(201)

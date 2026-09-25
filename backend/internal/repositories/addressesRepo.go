@@ -12,17 +12,23 @@ type AddressesRepo struct {
 	Db *pgx.Conn
 }
 
-func (self *AddressesRepo) Create(address *models.Address) {
-	query := `insert into addresses (id, street, house, door, floor)
-		values (@id, @street, @house, @door, @floor);`
-	self.Db.Exec(context.Background(), query,
+func (self *AddressesRepo) Create(address *models.Address) error {
+	query := `insert into addresses (id, street, house, door, floor, created_at)
+		values (@id, @street, @house, @door, @floor, @timestamp);`
+	timestamp := time.Now()
+	_, err := self.Db.Exec(context.Background(), query,
 		&pgx.NamedArgs{
-			"id":     address.Id,
-			"street": address.Street,
-			"house":  address.House,
-			"door":   address.Door,
-			"floor":  address.Floor,
+			"id":        address.Id,
+			"street":    address.Street,
+			"house":     address.House,
+			"door":      address.Door,
+			"floor":     address.Floor,
+			"timestamp": timestamp,
 		})
+	if err == nil {
+		address.CreatedAt = &timestamp
+	}
+	return err
 }
 
 func (self *AddressesRepo) Update(address *models.Address) error {
@@ -31,15 +37,15 @@ func (self *AddressesRepo) Update(address *models.Address) error {
 		house = @house,
 		door = @door,
 		floor = @floor,
-		updatedAt = @now
+		updated_at = @now
 		where id = @id`
 	timestamp := time.Now()
 	_, err := self.Db.Exec(context.Background(), query, &pgx.NamedArgs{
-		"street":    address.Street,
-		"house":     address.House,
-		"door":      address.Door,
-		"floor":     address.Floor,
-		"updatedAt": timestamp,
+		"street": address.Street,
+		"house":  address.House,
+		"door":   address.Door,
+		"floor":  address.Floor,
+		"now":    timestamp,
 	})
 	if err == nil {
 		address.UpdatedAt = &timestamp
@@ -48,7 +54,7 @@ func (self *AddressesRepo) Update(address *models.Address) error {
 }
 
 func (self *AddressesRepo) Delete(ctx context.Context, address *models.Address) error {
-	query := "update addresses set deletedAt = $1 where id = $2"
+	query := "update addresses set deleted_at = $1 where id = $2"
 	timestamp := time.Now()
 	_, err := self.Db.Exec(ctx, query, timestamp, address.Id)
 	if err == nil {

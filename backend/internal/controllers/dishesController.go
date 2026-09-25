@@ -16,10 +16,12 @@ type DishesController struct {
 }
 
 func NewDishesController(mux *http.ServeMux, service *services.DishesService) *DishesController {
+
 	controller := &DishesController{
 		mux:     mux,
 		Service: service,
 	}
+
 	mux.HandleFunc("POST /platos/crear", func(w http.ResponseWriter, r *http.Request) {
 		// esto deberiamos moverlo a un middleware independiente
 		file, header, err := r.FormFile("picture")
@@ -42,6 +44,7 @@ func NewDishesController(mux *http.ServeMux, service *services.DishesService) *D
 		}
 		file.Close()
 		///////////////////////////////////////////////////////////
+
 		dish := &models.Dish{}
 		json.Unmarshal([]byte(r.FormValue("dish")), dish)
 		service.Create(r.Context(), dish)

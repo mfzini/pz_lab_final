@@ -1,106 +1,103 @@
-SET timezone = '-03:00';
+set timezone = '-03:00';
 
-DROP DATABASE IF EXISTS example;
-CREATE DATABASE example;
+drop database if exists example;
+create database example;
 
--- Nota: Si usas psql, este comando conecta a la base de datos recién creada:
-\c example;
-
-CREATE TABLE IF NOT EXISTS addresses(
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    street varchar(36) NOT NULL,
-    house varchar(10) NOT NULL,
+create table if not exists addresses(
+    id uuid primary key default gen_random_uuid(),
+    street varchar(36) not null,
+    house varchar(10) not null,
     floor int,
-    door varchar(5) NOT NULL,
+    door varchar(5),
     coordinates point,
-    createdAt timestamp DEFAULT now(),
-    updatedAt timestamp,
-    deletedAt timestamp
+    created_at timestamp default now(),
+    updated_at timestamp,
+    deleted_at timestamp
 );
 
-CREATE TABLE IF NOT EXISTS people(
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    name varchar(36) NOT NULL,
-    surname varchar(36) NOT NULL,
-    email varchar(36) UNIQUE NOT NULL,
+create table if not exists people(
+    id uuid primary key default gen_random_uuid(),
+    name varchar(36) not null,
+    surname varchar(36) not null,
+    email varchar(36) unique not null,
     phone varchar(20),
-    createdAt timestamp DEFAULT now(),
-    updatedAt timestamp,
-    deletedAt timestamp
+    created_at timestamp default now(),
+    updated_at timestamp,
+    deleted_at timestamp
 );
 
-CREATE TABLE IF NOT EXISTS people_addresses(
-    personId uuid NOT NULL,
-    CONSTRAINT fk_people_addresses_person FOREIGN KEY (personId) REFERENCES people(id),
-    addressId uuid NOT NULL,
-    CONSTRAINT fk_people_addresses_address FOREIGN KEY (addressId) REFERENCES addresses(id),
+create table if not exists people_addresses(
+    person_id uuid not null,
+    constraint fk_people_addresses_person foreign key (person_id) references people(id),
+    address_id uuid not null,
+    constraint fk_people_addresses_address foreign key (address_id) references addresses(id),
     detail text,
-    createdAt timestamp DEFAULT now(),
-    updatedAt timestamp,
-    deletedAt timestamp
+    created_at timestamp default now(),
+    updated_at timestamp,
+    deleted_at timestamp
 );
 
-CREATE TABLE IF NOT EXISTS users(
-    personId uuid PRIMARY KEY,
-    CONSTRAINT fk_users_person FOREIGN KEY (personId) REFERENCES people(id),
-    username varchar(20) NOT NULL,
-    password varchar(255) NOT NULL,
-    createdAt timestamp DEFAULT now(),
-    updatedAt timestamp,
-    deletedAt timestamp
+create table if not exists users(
+    person_id uuid primary key,
+    constraint fk_users_person foreign key (person_id) references people(id),
+    username varchar(20) not null,
+    password varchar(255) not null,
+    created_at timestamp default now(),
+    updated_at timestamp,
+    deleted_at timestamp
 );
 
-CREATE TABLE IF NOT EXISTS ingredients(
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    name varchar(36) NOT NULL,
-    stock decimal(6,3) NOT NULL,
-    createdAt timestamp DEFAULT now(),
-    updatedAt timestamp,
-    deletedAt timestamp
+create table if not exists ingredients(
+    id uuid primary key default gen_random_uuid(),
+    name varchar(36) not null,
+    stock decimal(6,3) not null,
+    created_at timestamp default now(),
+    updated_at timestamp,
+    deleted_at timestamp
 );
 
-CREATE TABLE IF NOT EXISTS dishes(
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    name varchar(36) NOT NULL,
+create table if not exists dishes(
+    id uuid primary key default gen_random_uuid(),
+    name varchar(36) not null,
     picture varchar(255),
-    price decimal(10,2) NOT NULL,
-    createdAt timestamp DEFAULT now(),
-    updatedAt timestamp,
-    deletedAt timestamp
+    price decimal(10,2) not null,
+    created_at timestamp default now(),
+    updated_at timestamp,
+    deleted_at timestamp
 );
 
-CREATE TABLE IF NOT EXISTS dishes_ingredients(
-    dishId uuid NOT NULL,
-    CONSTRAINT fk_dishes_ingredients_dish FOREIGN KEY (dishId) REFERENCES dishes(id),
-    ingredientId uuid NOT NULL,
-    CONSTRAINT fk_dishes_ingredients_ingredient FOREIGN KEY (ingredientId) REFERENCES ingredients(id),
-    ammount decimal(4,3) NOT NULL,
+create table if not exists dishes_ingredients(
+    dish_id uuid not null,
+    constraint fk_dishes_ingredients_dish foreign key (dish_id) references dishes(id),
+    ingredient_id uuid not null,
+    constraint fk_dishes_ingredients_ingredient foreign key (ingredient_id) references ingredients(id),
+    ammount decimal(4,3) not null
 );
 
-CREATE TABLE IF NOT EXISTS orders_status(
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    name varchar(20) NOT NULL,
-    createdAt timestamp DEFAULT now(),
-    updatedAt timestamp,
-    deletedAt timestamp
+create table if not exists orders_status(
+    id uuid primary key default gen_random_uuid(),
+    name varchar(20) not null,
+    created_at timestamp default now(),
+    updated_at timestamp,
+    deleted_at timestamp
 );
 
-CREATE TABLE IF NOT EXISTS orders(
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+create table if not exists orders(
+    id uuid primary key default gen_random_uuid(),
     client uuid,
-    CONSTRAINT fk_orders_client FOREIGN KEY (client) REFERENCES users(personId),
+    constraint fk_orders_client foreign key (client) references users(person_id),
     detail text,
-    createdAt timestamp DEFAULT now(),
-    updatedAt timestamp,
-    deletedAt timestamp
+    created_at timestamp default now(),
+    updated_at timestamp,
+    deleted_at timestamp
 );
 
-CREATE TABLE IF NOT EXISTS status_orders(
-    orderId uuid NOT NULL,
-    CONSTRAINT fk_status_orders_order FOREIGN KEY (orderId) REFERENCES orders(id),
-    status uuid NOT NULL,
-    CONSTRAINT fk_status_orders_status FOREIGN KEY (status) REFERENCES orders_status(id),
-    createdAt timestamp DEFAULT now(),
-    updatedAt timestamp,
-    deletedAt timestamp
+create table if not exists status_orders(
+    order_id uuid not null,
+    constraint fk_status_orders_order foreign key (order_id) references orders(id),
+    status uuid not null,
+    constraint fk_status_orders_status foreign key (status) references orders_status(id),
+    created_at timestamp default now(),
+    updated_at timestamp,
+    deleted_at timestamp
 );

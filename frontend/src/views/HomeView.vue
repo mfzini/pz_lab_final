@@ -20,7 +20,7 @@ async function wea() {
     console.log(await r.json())
 }
 async function test() {
-    const r = await fetch("http://localhost:3000/protected", {
+    const r = await fetch(`http://localhost:3000/person/${username.value}`, {
         method: "GET",
         mode: "cors",
         credentials: "include",
