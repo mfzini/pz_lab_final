@@ -1,11 +1,13 @@
 package main
 
 import (
-	"example/internal/controllers"
 	"example/internal/db"
+	"example/internal/domain/addresses"
+	"example/internal/domain/dishes"
+	"example/internal/domain/images"
+	"example/internal/domain/people"
 	"example/internal/middleware"
-	"example/internal/repositories"
-	"example/internal/services"
+
 	"net/http"
 )
 
@@ -15,12 +17,19 @@ func main() {
 
 func Init() {
 	mux := http.NewServeMux()
-	peopleService := &services.PeopleService{
-		Repo: repositories.NewPeopleRepo(db.GetConnection()),
-	}
-	//dishesRepo := repositories.NewDishesRepo(db.GetConnection())
 
-	controllers.HandlePeople(mux, peopleService)
+	imagesRepo := images.NewRepo(db.GetConnection())
+	imagesService := images.NewService(imagesRepo)
+	images.ServeWithMux(mux)
 
-	http.ListenAndServe(":3000", middleware.Cors(middleware.Json(mux)))
+	peopleHandler := people.NewHandler(people.NewService(people.NewRepo(db.GetConnection())))
+	peopleHandler.Setup(mux)
+
+	addressesHandler := addresses.NewHandler(addresses.NewService(addresses.NewRepo(db.GetConnection())))
+	addressesHandler.Setup(mux)
+
+	dishesHandler := dishes.NewHandler(dishes.NewService(dishes.NewRepo(db.GetConnection(), imagesService)))
+	dishesHandler.Setup(mux)
+
+	http.ListenAndServe(":3000", middleware.Cors(mux))
 }

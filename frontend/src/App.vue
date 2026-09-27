@@ -9,6 +9,7 @@
     <nav>
       <router-link to="/about">About</router-link>
       <router-link to="/persona">Persona</router-link>
+      <router-link to="/platos">Platos</router-link>
     </nav>
   </header>
   <router-view></router-view>

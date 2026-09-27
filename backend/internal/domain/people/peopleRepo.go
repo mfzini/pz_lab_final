@@ -1,26 +1,25 @@
-package repositories
+package people
 
 import (
 	"context"
-	"example/internal/models"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 )
 
-type PeopleRepo struct {
-	Db *pgx.Conn
+type repo struct {
+	db *pgx.Conn
 }
 
-func NewPeopleRepo(connection *pgx.Conn) *PeopleRepo {
-	return &PeopleRepo{Db: connection}
+func NewRepo(connection *pgx.Conn) *repo {
+	return &repo{db: connection}
 }
 
-func (self *PeopleRepo) Create(p *models.Person) error {
+func (this *repo) create(p *Model) error {
 	query := `insert into people (id, name, surname, email, phone, created_at)
 		values (@id, @name, @surname, @email, @phone, @created_at)`
 	timestamp := time.Now()
-	_, err := self.Db.Exec(context.Background(), query,
+	_, err := this.db.Exec(context.Background(), query,
 		&pgx.NamedArgs{
 			"id":         p.Id,
 			"name":       p.Name,
@@ -35,7 +34,7 @@ func (self *PeopleRepo) Create(p *models.Person) error {
 	return err
 }
 
-func (self *PeopleRepo) Update(p *models.Person) error {
+func (this *repo) update(p *Model) error {
 	query := `update people set
 	name = @name,
 	surname = @surname,
@@ -44,7 +43,7 @@ func (self *PeopleRepo) Update(p *models.Person) error {
 	updated_at = @now
 	where id = @id`
 	timestamp := time.Now()
-	_, err := self.Db.Exec(context.Background(), query, &pgx.NamedArgs{
+	_, err := this.db.Exec(context.Background(), query, &pgx.NamedArgs{
 		"name":    p.Name,
 		"surname": p.Surname,
 		"email":   p.Email,
@@ -58,30 +57,30 @@ func (self *PeopleRepo) Update(p *models.Person) error {
 	return err
 }
 
-func (self *PeopleRepo) Delete(p *models.Person) error {
+func (this *repo) delete(p *Model) error {
 	query := "update people set deleted_at=$1 where id=$2"
 	timestamp := time.Now()
-	_, err := self.Db.Exec(context.Background(), query, timestamp, p.Id)
+	_, err := this.db.Exec(context.Background(), query, timestamp, p.Id)
 	if err == nil {
 		p.DeletedAt = &timestamp
 	}
 	return err
 }
 
-func (self *PeopleRepo) FindById(id string) (*models.Person, error) {
+func (this *repo) FindById(id string) (*Model, error) {
 	query := "select * from people where id = $1"
-	r, err := self.Db.Query(context.Background(), query, id)
+	r, err := this.db.Query(context.Background(), query, id)
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectOneRow(r, pgx.RowToAddrOfStructByName[models.Person])
+	return pgx.CollectOneRow(r, pgx.RowToAddrOfStructByName[Model])
 }
 
-func (self *PeopleRepo) FindByEmail(email string) (*models.Person, error) {
+func (this *repo) FindByEmail(email string) (*Model, error) {
 	query := "select * from people where email = $1"
-	r, err := self.Db.Query(context.Background(), query, email)
+	r, err := this.db.Query(context.Background(), query, email)
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectOneRow(r, pgx.RowToAddrOfStructByName[models.Person])
+	return pgx.CollectOneRow(r, pgx.RowToAddrOfStructByName[Model])
 }

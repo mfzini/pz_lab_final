@@ -37,6 +37,16 @@ create table if not exists people_addresses(
     deleted_at timestamp
 );
 
+create table if not exists images(
+    id uuid primary key default gen_random_uuid(),
+    original_name varchar(255) not null,
+    sha256 varchar(64) not null,
+    mimetype varchar(10) not null,
+    created_at timestamp default now(),
+    updated_at timestamp,
+    deleted_at timestamp
+);
+
 create table if not exists users(
     person_id uuid primary key,
     constraint fk_users_person foreign key (person_id) references people(id),
@@ -59,11 +69,19 @@ create table if not exists ingredients(
 create table if not exists dishes(
     id uuid primary key default gen_random_uuid(),
     name varchar(36) not null,
-    picture varchar(255),
     price decimal(10,2) not null,
+    portrait uuid,
+    constraint fk_dish_image foreign key (portrait) references images(id),
     created_at timestamp default now(),
     updated_at timestamp,
     deleted_at timestamp
+);
+
+create table if not exists dishes_images(
+    dish_id uuid,
+    constraint fk_dish_image foreign key (dish_id) references dishes(id),
+    image_id uuid,
+    constraint fk_image_dish foreign key (image_id) references images(id)
 );
 
 create table if not exists dishes_ingredients(
