@@ -1,6 +1,5 @@
 <script setup>
   
-  
 </script>
 
 <template>
@@ -10,9 +9,12 @@
       <router-link to="/about">About</router-link>
       <router-link to="/persona">Persona</router-link>
       <router-link to="/platos">Platos</router-link>
+      <router-link to="/pedidos">Pedidos</router-link>
     </nav>
   </header>
-  <router-view></router-view>
+    <Suspense>
+      <router-view></router-view>
+    </Suspense>
 </template>
 
 <style scoped>

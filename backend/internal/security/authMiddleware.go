@@ -1,16 +1,16 @@
 package security
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 )
 
 type AuthMessage struct{ Message string }
 
-func extractToken(r *http.Request) (string, bool) {
+func extractToken(r *http.Request) string {
 	header := r.Header.Get("Authorization")
-	return strings.CutPrefix(header, "Bearer ")
+	token, _ := strings.CutPrefix(header, "Bearer ")
+	return token
 }
 
 func isTokenValid(token string) bool {
@@ -19,10 +19,9 @@ func isTokenValid(token string) bool {
 
 func OnlyAdmin(next http.HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, isPresent := extractTokenFromCookie(r)
-		if !isPresent || !isTokenValid(token) {
-			w.WriteHeader(403)
-			json.NewEncoder(w).Encode(&AuthMessage{Message: "Forbidden"})
+		token := extractToken(r)
+		if !isTokenValid(token) {
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		next.ServeHTTP(w, r)

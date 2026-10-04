@@ -18,21 +18,18 @@ func NewRepo(db *pgx.Conn) *repo {
 }
 
 func (this *repo) create(address *Model) error {
-	query := `insert into addresses (id, street, house, door, floor, created_at)
-		values (@id, @street, @house, @door, @floor, @timestamp);`
-	timestamp := time.Now()
+	query := `insert into addresses (id, street, house, door, floor, coordinates)
+		values (@id, @street, @house, @door, @floor, @coordinates);`
+
 	_, err := this.db.Exec(context.Background(), query,
 		&pgx.NamedArgs{
-			"id":        address.Id,
-			"street":    address.Street,
-			"house":     address.House,
-			"door":      address.Door,
-			"floor":     address.Floor,
-			"timestamp": timestamp,
+			"id":          address.Id,
+			"street":      address.Street,
+			"house":       address.House,
+			"door":        address.Door,
+			"floor":       address.Floor,
+			"coordinates": address.Coordinates,
 		})
-	if err == nil {
-		address.CreatedAt = &timestamp
-	}
 	return err
 }
 
@@ -42,15 +39,17 @@ func (this *repo) update(address *Model) error {
 		house = @house,
 		door = @door,
 		floor = @floor,
+		coordinates = @coordinates
 		updated_at = @now
 		where id = @id`
 	timestamp := time.Now()
 	_, err := this.db.Exec(context.Background(), query, &pgx.NamedArgs{
-		"street": address.Street,
-		"house":  address.House,
-		"door":   address.Door,
-		"floor":  address.Floor,
-		"now":    timestamp,
+		"street":      address.Street,
+		"house":       address.House,
+		"door":        address.Door,
+		"floor":       address.Floor,
+		"coordinates": address.Coordinates,
+		"now":         timestamp,
 	})
 	if err == nil {
 		address.UpdatedAt = &timestamp

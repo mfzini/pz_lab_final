@@ -1,16 +1,15 @@
 package images
 
 import (
-	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"example/internal/apiErrors"
-	"example/internal/utils"
+	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"strings"
-	"time"
-	"uuid"
-
-	"github.com/jackc/pgx/v5"
 )
 
 type Service struct {
@@ -21,33 +20,44 @@ func NewService(repo *Repo) *Service {
 	return &Service{repo}
 }
 
-func (this *Service) Create(ctx context.Context, tx pgx.Tx, img *Model) *apiErrors.Error {
-	if img.CreatedAt == nil {
-		timestamp := time.Now()
-		img.CreatedAt = &timestamp
+func Sha256(img multipart.File) (string, error) {
+	hasher := sha256.New()
+	img.Seek(0, io.SeekStart)
+	if _, err := io.Copy(hasher, img); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return "", err
 	}
+	img.Seek(0, io.SeekStart)
+	hash := hasher.Sum(nil)
+	return hex.EncodeToString(hash), nil
+}
+
+func (this *Service) IsImage(img multipart.File) bool {
+	img.Seek(0, io.SeekStart)
 	mn := make([]byte, 512)
-	io.ReadAtLeast(*img.Multipart, mn, 512)
-	img.MimeType = http.DetectContentType(mn)
-	if !strings.HasPrefix(img.MimeType, "image") {
-		return apiErrors.New("Solo se admiten imágenes.", http.StatusBadRequest)
+	io.ReadAtLeast(img, mn, 512)
+	img.Seek(0, io.SeekStart)
+
+	mimeType := http.DetectContentType(mn)
+	return strings.HasPrefix(mimeType, "image")
+}
+
+func (this *Service) Save(img multipart.File) (string, error) {
+	if !this.IsImage(img) {
+		return "", apiErrors.New("Solo se admiten imágenes", http.StatusBadRequest)
 	}
 
-	hash, err := utils.SHA256(*img.Multipart)
+	hash, err := Sha256(img)
 	if err != nil {
-		return apiErrors.Generic(err)
-	}
-	img.Sha256 = hash
-
-	if onDb := this.findByHash(ctx, img.Sha256); onDb != nil {
-		img = onDb
-		return nil
+		return "", err
 	}
 
-	img.Id = uuid.NewV7().String()
-	if err := this.Repo.create(ctx, tx, img); err != nil {
-		return apiErrors.Generic(err)
+	exists, err := this.Repo.exists(hash)
+	if err != nil {
+		return "", err
 	}
-
-	return nil
+	if !exists {
+		this.Repo.saveToDisk(hash, img)
+	}
+	return hash, nil
 }

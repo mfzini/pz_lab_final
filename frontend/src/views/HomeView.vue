@@ -1,11 +1,11 @@
 <script setup>
 import { ref } from 'vue'
-
+const api = "http://localhost:3000"
 const username = ref("");
 const password = ref("");
 
 async function wea() {
-    const r = await fetch("http://localhost:3000/login", {
+    const r = await fetch(`${api}/login`, {
         method: "POST",
         mode: "cors",
         credentials: "include",
@@ -32,6 +32,7 @@ async function test() {
 <template>
 
     <h1>Home</h1>
+    <img src="http://localhost:3000/uploads/01a0e468-e213-7804-85ff-5cf345fc857b.jpg" alt="">
     <form id="loginForm" @submit.prevent="wea">
         <input type="text" name="username" v-model="username">
         <input type="password" name="password" v-model="password">

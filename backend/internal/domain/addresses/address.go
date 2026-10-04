@@ -6,8 +6,9 @@ type Model struct {
 	Id,
 	Street,
 	House,
-	Coordinates *string
 	Floor *int
-	Door  *string
+	Coordinates,
+	Detail,
+	Door *string
 	common.TimeStamps
 }
