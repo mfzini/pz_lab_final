@@ -119,7 +119,7 @@ func (this *repo) fetchProducts(ctx context.Context, order *Model) error {
 		if err := rows.Scan(&product.Id, &product.Name, &product.Amount, &product.Price); err != nil {
 			return err
 		}
-		product.Price = product.Price * float64(product.Amount)
+		product.Price = product.Price * product.Amount
 		order.Products = append(order.Products, product)
 		order.Total += product.Price
 	}

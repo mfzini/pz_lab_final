@@ -8,7 +8,7 @@ type Model struct {
 	Id,
 	Name,
 	Portrait string
-	Price  float64
+	Price  int
 	Amount int
 	common.TimeStamps
 }

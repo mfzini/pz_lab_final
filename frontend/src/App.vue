@@ -12,9 +12,8 @@
       <router-link to="/pedidos">Pedidos</router-link>
     </nav>
   </header>
-    <Suspense>
       <router-view></router-view>
-    </Suspense>
+      
 </template>
 
 <style scoped>

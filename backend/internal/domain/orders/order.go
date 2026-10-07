@@ -14,6 +14,6 @@ type Model struct {
 	Client   *people.Model
 	Products []*products.Model
 	Address  *addresses.Model
-	Total    float64
+	Total    int
 	common.TimeStamps
 }
