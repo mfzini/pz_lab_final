@@ -3,12 +3,8 @@ package users
 import (
 	"context"
 	"example/internal/apiErrors"
-	"fmt"
 	"net/http"
-	"os"
 	"uuid"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
@@ -36,25 +32,19 @@ func (this *Service) Create(user *Model) *apiErrors.Error {
 	if exists, _ := this.repo.FindByEmail(user.Email); exists != nil {
 		return apiErrors.New("Email no válido.", http.StatusNotAcceptable)
 	}
+
+	user.hashPassword()
 	if err := this.repo.create(user); err != nil {
 		return apiErrors.Generic(err)
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 0)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Muy grande me lastima. %v\n", err)
-		return apiErrors.FromError(err, http.StatusBadRequest)
-	}
-	user.Password = string(hash)
+
 	return nil
 }
 
-func (this *Service) Update(user *Model) error {
-	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 0)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Muy grande me lastima. %v\n", err)
-		return apiErrors.FromError(err, http.StatusBadRequest)
+func (this *Service) Update(user *Model, shouldHashPassword bool) error {
+	if shouldHashPassword {
+		user.hashPassword()
 	}
-	user.Password = string(hash)
 	return this.repo.update(user)
 }
 

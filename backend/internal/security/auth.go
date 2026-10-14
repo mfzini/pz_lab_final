@@ -40,7 +40,7 @@ func (this *loginHandler) Setup(mux *http.ServeMux) {
 			Role:     "admin",
 		}
 		this.usersService.Create(admin)
-		this.usersService.Update(admin)
+		this.usersService.Update(admin, false)
 	})
 
 	mux.HandleFunc("POST /login", func(w http.ResponseWriter, r *http.Request) {
