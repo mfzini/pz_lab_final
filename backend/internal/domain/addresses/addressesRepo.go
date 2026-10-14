@@ -87,11 +87,11 @@ func (this *repo) FindByStreetAndHouse(ctx context.Context, street, house string
 	return pgx.CollectRows(r, pgx.RowToAddrOfStructByName[Model])
 }
 
-func (this *repo) FindByPersonID(ctx context.Context, id string) ([]*Model, error) {
+func (this *repo) FindByUserID(ctx context.Context, id string) ([]*Model, error) {
 	query := `select a.id, a.street, a.house, a.coordinates::text as coordinates, a.floor, a.door, a.created_at, a.updated_at, a.deleted_at 
 		from addresses a
-		join people_addresses pa on pa.address_id = a.id
-		where pa.person_id = $1`
+		join users_addresses ua on ua.address_id = a.id
+		where ua.user_id = $1`
 	r, err := this.db.Query(ctx, query, id)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

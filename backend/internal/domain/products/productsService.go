@@ -19,17 +19,17 @@ func NewService(repo *repo, imagesService *images.Service) *Service {
 	return &Service{repo, imagesService}
 }
 
-func (this *Service) Create(ctx context.Context, dish *Model, img multipart.File) *apiErrors.Error {
-	if dish.Price <= 0 {
+func (this *Service) Create(ctx context.Context, product *Model, img multipart.File) *apiErrors.Error {
+	if product.Price <= 0 {
 		return apiErrors.New("Estas perdiendo plata!", http.StatusBadRequest)
 	}
 	hash, err := this.imagesService.Save(img)
 	if err != nil {
 		return apiErrors.Generic(err)
 	}
-	dish.Id = uuid.NewV7().String()
-	dish.Portrait = fmt.Sprintf("/uploads/%s", hash)
-	if err := this.repo.create(ctx, dish); err != nil {
+	product.Id = uuid.NewV7().String()
+	product.Portrait = fmt.Sprintf("/uploads/%s", hash)
+	if err := this.repo.create(ctx, product); err != nil {
 		return apiErrors.Generic(err)
 	}
 	return nil

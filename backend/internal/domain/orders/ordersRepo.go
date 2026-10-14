@@ -3,8 +3,8 @@ package orders
 import (
 	"context"
 	"example/internal/domain/addresses"
-	"example/internal/domain/people"
 	"example/internal/domain/products"
+	"example/internal/domain/users"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -42,37 +42,37 @@ func (this *repo) create(ctx context.Context, order *Model) error {
 func (this *repo) findById(ctx context.Context, id string) (*Model, error) {
 	query := `
 		select o.id, o.client_id, o.address_id, o.detail
-			person.name, person.surname, person.phone, person.email
+			u.name, u.surname, u.phone, u.email
 			a.street, a.house, a.door, a.floor, a.detail, a.coordinates::text as coordinates
 		from orders o
-		join people p on person.id = o.client_id
+		join users u on u.id = o.client_id
 		join addresses a on a.id = o.address_id
 		where o.id = $1
 	`
 	row := this.db.QueryRow(ctx, query, id)
 	order := &Model{Total: 0}
-	person := &people.Model{}
+	user := &users.Model{}
 	address := &addresses.Model{}
-	err := row.Scan(&order.Id, &person.Id, &address.Id, &order.Detail,
-		&person.Name, &person.Surname, &person.Phone, &person.Email,
+	err := row.Scan(&order.Id, &user.Id, &address.Id, &order.Detail,
+		&user.Name, &user.Surname, &user.Phone, &user.Email,
 		&address.Street, &address.House, &address.Door, &address.Floor, &address.Detail, &address.Coordinates)
 	if err != nil {
 		return nil, err
 	}
-	order.Client = person
+	order.Client = user
 	order.Address = address
 	if err := this.fetchProducts(ctx, order); err != nil {
 		return nil, err
 	}
 	return order, nil
 }
-func (this *repo) findByPersonID(ctx context.Context, id string) ([]*Model, error) {
+func (this *repo) findByuserID(ctx context.Context, id string) ([]*Model, error) {
 	query := `
 		select o.id, o.client_id, o.address_id, o.detail
-			person.name, person.surname, person.phone, person.email
+			u.name, u.surname, u.phone, u.email
 			a.street, a.house, a.door, a.floor, a.detail, a.coordinates::text as coordinates
 		from orders o
-		join people p on person.id = o.client_id
+		join users u on u.id = o.client_id
 		join addresses a on a.id = o.address_id
 		where o.client_id = $1
 	`
@@ -81,17 +81,17 @@ func (this *repo) findByPersonID(ctx context.Context, id string) ([]*Model, erro
 		return nil, err
 	}
 	orders := make([]*Model, 0)
-	person := &people.Model{}
+	user := &users.Model{}
 	for rows.Next() {
 		order := &Model{Total: 0}
 		address := &addresses.Model{}
-		err := rows.Scan(&order.Id, &person.Id, &address.Id, &order.Detail,
-			&person.Name, &person.Surname, &person.Phone, &person.Email,
+		err := rows.Scan(&order.Id, &user.Id, &address.Id, &order.Detail,
+			&user.Name, &user.Surname, &user.Phone, &user.Email,
 			&address.Street, &address.House, &address.Door, &address.Floor, &address.Detail, &address.Coordinates)
 		if err != nil {
 			return nil, err
 		}
-		order.Client = person
+		order.Client = user
 		order.Address = address
 		if err := this.fetchProducts(ctx, order); err != nil {
 			return nil, err

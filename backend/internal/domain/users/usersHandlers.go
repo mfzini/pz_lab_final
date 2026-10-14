@@ -1,4 +1,4 @@
-package people
+package users
 
 import (
 	"encoding/json"
@@ -12,16 +12,16 @@ type Response struct {
 }
 
 type handler struct {
-	*service
+	*Service
 }
 
-func NewHandler(service *service) *handler {
-	return &handler{service}
+func NewHandler(Service *Service) *handler {
+	return &handler{Service}
 }
 
 func (this *handler) Setup(mux *http.ServeMux) {
-	mux.HandleFunc("GET /persona/{id}", this.getByID)
-	mux.HandleFunc("POST /persona", this.create)
+	mux.HandleFunc("GET /user/{id}", this.getByID)
+	mux.HandleFunc("POST /user", this.create)
 }
 
 func (this *handler) create(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +33,7 @@ func (this *handler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := this.service.Create(p); err != nil {
+	if err := this.Service.Create(p); err != nil {
 		w.WriteHeader(err.StatusCode)
 		fmt.Fprintln(os.Stderr, err)
 		return
@@ -45,13 +45,12 @@ func (this *handler) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *handler) getByID(w http.ResponseWriter, r *http.Request) {
-	encoder := json.NewEncoder(w)
 	id := r.PathValue("id")
 
-	p, err := this.service.repo.FindById(id)
+	p, err := this.Service.repo.FindById(id)
 	if err != nil {
 		w.WriteHeader(500)
-		encoder.Encode(err)
+		fmt.Fprintf(os.Stderr, "%+v", err)
 		return
 	}
 	if p == nil {

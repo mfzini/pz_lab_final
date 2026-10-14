@@ -3,6 +3,7 @@ package products
 import (
 	"encoding/json"
 	"example/internal/domain/common"
+	"example/internal/security"
 	"fmt"
 	"net/http"
 	"os"
@@ -22,7 +23,7 @@ func NewHandler(service *Service) *handler {
 
 func (this *handler) Setup(mux *http.ServeMux) {
 
-	mux.HandleFunc("POST /platos", this.postProduct)
+	mux.HandleFunc("POST /platos", security.OnlyAdmin(this.postProduct))
 	mux.HandleFunc("GET /platos/list", this.list)
 	mux.HandleFunc("GET /platos/{id}", this.getDish)
 }

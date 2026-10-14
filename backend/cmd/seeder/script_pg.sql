@@ -1,11 +1,13 @@
 set timezone = '-03:00';
 
-create table if not exists people(
+create table if not exists users(
     id uuid primary key default gen_random_uuid(),
     name varchar(36) not null,
     surname varchar(36) not null,
     email varchar(36) unique not null,
     phone varchar(20),
+    avatar varchar(250),
+    role varchar(16) default 'client',
     created_at timestamp default now(),
     updated_at timestamp,
     deleted_at timestamp
@@ -24,19 +26,19 @@ create table if not exists addresses(
     deleted_at timestamp
 );
 
-create table if not exists people_addresses(
-    person_id uuid not null,
-    constraint fk_people_addresses_person foreign key (person_id) references people(id),
+create table if not exists users_addresses(
+    user_id uuid not null,
+    constraint fk_users_addresses_user foreign key (user_id) references users(id),
     address_id uuid not null,
-    constraint fk_people_addresses_address foreign key (address_id) references addresses(id),
+    constraint fk_users_addresses_address foreign key (address_id) references addresses(id),
     created_at timestamp default now(),
     updated_at timestamp,
     deleted_at timestamp
 );
 
 create table if not exists users(
-    person_id uuid primary key,
-    constraint fk_users_person foreign key (person_id) references people(id),
+    user_id uuid primary key,
+    constraint fk_users_user foreign key (user_id) references users(id),
     username varchar(20) not null,
     password varchar(255) not null,
     created_at timestamp default now(),
@@ -58,7 +60,7 @@ create table if not exists products(
 create table if not exists orders(
     id uuid primary key default gen_random_uuid(),
     client_id uuid,
-    constraint fk_orders_client foreign key (client_id) references users(person_id),
+    constraint fk_orders_client foreign key (client_id) references users(id),
     address uuid,
     constraint fk_order_address foreign key (address) references addresses(id),
     detail text,

@@ -1,4 +1,4 @@
-package people
+package users
 
 import (
 	"context"
@@ -15,60 +15,67 @@ func NewRepo(connection *pgx.Conn) *repo {
 	return &repo{db: connection}
 }
 
-func (this *repo) create(p *Model) error {
-	query := `insert into people (id, name, surname, email, phone, created_at)
-		values (@id, @name, @surname, @email, @phone, @created_at)`
+func (this *repo) create(u *Model) error {
+	query := `insert into users (id, name, surname, email, phone, password, created_at)
+		values (@id, @name, @surname, @email, @phone, @password, @created_at)`
 	timestamp := time.Now()
 	_, err := this.db.Exec(context.Background(), query,
 		&pgx.NamedArgs{
-			"id":         p.Id,
-			"name":       p.Name,
-			"surname":    p.Surname,
-			"email":      p.Email,
-			"phone":      p.Phone,
+			"id":         u.Id,
+			"name":       u.Name,
+			"surname":    u.Surname,
+			"email":      u.Email,
+			"phone":      u.Phone,
+			"password":   u.Password,
 			"created_at": timestamp,
 		})
 	if err == nil {
-		p.CreatedAt = &timestamp
+		u.CreatedAt = &timestamp
 	}
 	return err
 }
 
-func (this *repo) update(p *Model) error {
-	query := `update people set
+func (this *repo) update(u *Model) error {
+	query := `update users set
 	name = @name,
 	surname = @surname,
 	email = @email,
 	phone = @phone,
+	role = @role,
+	avatar = @avatar,
+	password = @password,
 	updated_at = @now
 	where id = @id`
 	timestamp := time.Now()
 	_, err := this.db.Exec(context.Background(), query, &pgx.NamedArgs{
-		"name":    p.Name,
-		"surname": p.Surname,
-		"email":   p.Email,
-		"phone":   p.Phone,
-		"now":     timestamp,
-		"id":      p.Id,
+		"name":     u.Name,
+		"surname":  u.Surname,
+		"email":    u.Email,
+		"phone":    u.Phone,
+		"role":     u.Role,
+		"avatar":   u.Avatar,
+		"password": u.Password,
+		"now":      timestamp,
+		"id":       u.Id,
 	})
 	if err == nil {
-		p.UpdatedAt = &timestamp
+		u.UpdatedAt = &timestamp
 	}
 	return err
 }
 
-func (this *repo) delete(p *Model) error {
-	query := "update people set deleted_at=$1 where id=$2"
+func (this *repo) delete(u *Model) error {
+	query := "update users set deleted_at=$1 where id=$2"
 	timestamp := time.Now()
-	_, err := this.db.Exec(context.Background(), query, timestamp, p.Id)
+	_, err := this.db.Exec(context.Background(), query, timestamp, u.Id)
 	if err == nil {
-		p.DeletedAt = &timestamp
+		u.DeletedAt = &timestamp
 	}
 	return err
 }
 
 func (this *repo) FindById(id string) (*Model, error) {
-	query := "select * from people where id = $1"
+	query := "select * from users where id = $1"
 	r, err := this.db.Query(context.Background(), query, id)
 	if err != nil {
 		return nil, err
@@ -77,7 +84,7 @@ func (this *repo) FindById(id string) (*Model, error) {
 }
 
 func (this *repo) FindByEmail(email string) (*Model, error) {
-	query := "select * from people where email = $1"
+	query := "select * from users where email = $1"
 	r, err := this.db.Query(context.Background(), query, email)
 	if err != nil {
 		return nil, err

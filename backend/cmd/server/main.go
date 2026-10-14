@@ -4,33 +4,44 @@ import (
 	"example/internal/db"
 	"example/internal/domain/addresses"
 	"example/internal/domain/images"
-	"example/internal/domain/people"
 	"example/internal/domain/products"
+	"example/internal/domain/users"
 	"example/internal/middleware"
+	"example/internal/security"
 	"os"
 
 	"net/http"
 )
 
 func main() {
-	Init()
+	Setup()
 }
 
-func Init() {
+func Setup() {
 	mux := http.NewServeMux()
-
 	imagesRepo := images.NewRepo(os.Getenv("PATH_UPLOADS"))
 	imagesService := images.NewService(imagesRepo)
 	images.ServeWithMux(mux)
 
-	peopleHandler := people.NewHandler(people.NewService(people.NewRepo(db.GetConnection())))
-	peopleHandler.Setup(mux)
+	usersRepo := users.NewRepo(db.GetConnection())
+	usersService := users.NewService(usersRepo)
+	usersHandler := users.NewHandler(usersService)
+	usersHandler.Setup(mux)
 
-	addressesHandler := addresses.NewHandler(addresses.NewService(addresses.NewRepo(db.GetConnection())))
+	addressesRepo := addresses.NewRepo(db.GetConnection())
+	addressesService := addresses.NewService(addressesRepo)
+	addressesHandler := addresses.NewHandler(addressesService)
 	addressesHandler.Setup(mux)
 
-	productsHandler := products.NewHandler(products.NewService(products.NewRepo(db.GetConnection()), imagesService))
+	productsRepo := products.NewRepo(db.GetConnection())
+	productsService := products.NewService(productsRepo, imagesService)
+	productsHandler := products.NewHandler(productsService)
 	productsHandler.Setup(mux)
 
-	http.ListenAndServe(":3000", middleware.Cors(mux))
+	jwtService := security.NewJWTService(usersService)
+	loginHandler := security.NewAuthHandler(usersService, jwtService)
+	loginHandler.Setup(mux)
+
+	mainHandler := jwtService.SetUserContext(mux)
+	http.ListenAndServe(":3000", middleware.Cors(mainHandler))
 }

@@ -27,9 +27,9 @@ func (this *handler) Setup(mux *http.ServeMux) {
 func (this *handler) search(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
-	personID := query.Get("persona")
-	if personID != "" {
-		this.getByPersonID(w, r, personID)
+	userID := query.Get("user")
+	if userID != "" {
+		this.getByuserID(w, r, userID)
 		return
 	}
 
@@ -43,8 +43,8 @@ func (this *handler) search(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(400)
 }
 
-func (this *handler) getByPersonID(w http.ResponseWriter, r *http.Request, id string) {
-	addresses, err := this.service.repo.FindByPersonID(r.Context(), id)
+func (this *handler) getByuserID(w http.ResponseWriter, r *http.Request, id string) {
+	addresses, err := this.service.repo.FindByUserID(r.Context(), id)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		w.WriteHeader(500)
