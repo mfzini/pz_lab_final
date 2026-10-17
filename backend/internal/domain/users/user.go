@@ -2,11 +2,10 @@ package users
 
 import (
 	"example/internal/domain/common"
+	"example/internal/security"
 
 	"golang.org/x/crypto/bcrypt"
 )
-
-type Role string
 
 type Model struct {
 	Id,
@@ -14,7 +13,7 @@ type Model struct {
 	Surname,
 	Email,
 	Phone string
-	Role
+	Role     security.Role
 	Avatar   *string
 	Password string `json:"-"`
 	common.TimeStamps

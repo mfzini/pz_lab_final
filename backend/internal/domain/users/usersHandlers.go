@@ -3,9 +3,12 @@ package users
 import (
 	"encoding/json"
 	"example/internal/api"
+	"example/internal/security"
 	"fmt"
 	"net/http"
 	"os"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Response struct {
@@ -14,10 +17,16 @@ type Response struct {
 
 type handler struct {
 	*Service
+	jwtService *security.JwtService
 }
 
-func NewHandler(Service *Service) *handler {
-	return &handler{Service}
+func NewHandler(Service *Service, jwtService *security.JwtService) *handler {
+	return &handler{Service, jwtService}
+}
+
+type LoginRequest struct {
+	Email,
+	Password string
 }
 
 func (this *handler) Setup(mux *http.ServeMux) {
@@ -26,41 +35,46 @@ func (this *handler) Setup(mux *http.ServeMux) {
 	mux.HandleFunc("PATCH /user/{id}", this.update)
 	mux.HandleFunc("GET /user/{id}", this.getByID)
 
-	/* mux.HandleFunc("POST /init", func(w http.ResponseWriter, r *http.Request) {
-		if this.usersService.AdminExists() {
+	mux.HandleFunc("POST /init", func(w http.ResponseWriter, r *http.Request) {
+		if this.Service.AdminExists() {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		data := &LoginRequest{}
 		json.NewDecoder(r.Body).Decode(data)
-		admin := &users.Model{
+		admin := &Model{
 			Name:     "Cosme",
 			Surname:  "Fulanito",
 			Email:    data.Email,
 			Password: data.Password,
 			Role:     "admin",
 		}
-		if err := this.usersService.Create(admin); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+		if err := this.Service.Create(admin); err != nil {
+			w.WriteHeader(err.StatusCode)
+			return
+		}
+		if err := this.Service.UpdateRole(r.Context(), admin.Id, security.Admin); err != nil {
+			w.WriteHeader(err.StatusCode)
+			return
 		}
 	})
 
 	mux.HandleFunc("POST /login", func(w http.ResponseWriter, r *http.Request) {
 		loginRequest := &LoginRequest{}
 		json.NewDecoder(r.Body).Decode(loginRequest)
-		user, err := this.usersService.FindByEmail(loginRequest.Email)
+		user, err := this.Service.FindByEmail(loginRequest.Email)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginRequest.Password)); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		token := this.jwtService.GenerateToken(user)
-		w.Header().Add("Authorization", "Bearer: "+token)
+		token := this.jwtService.GenerateToken(user.Id, security.Role(user.Role))
+		w.Header().Add("Authorization", "Bearer "+token)
 		w.WriteHeader(http.StatusOK)
-	}) */
+	})
 }
 
 func (this *handler) create(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +98,9 @@ func (this *handler) update(w http.ResponseWriter, r *http.Request) {
 	data := &Model{}
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
+	data.Id = id
 	if err := this.Service.Update(r.Context(), id, data); err != nil {
 		api.WriteJson(w, err, err.StatusCode)
 	}

@@ -22,9 +22,10 @@ func Setup() {
 	imagesService := images.NewService(imagesRepo)
 	images.ServeWithMux(mux)
 
+	jwtService := security.NewJWTService()
 	usersRepo := users.NewRepo(db.GetConnection())
 	usersService := users.NewService(usersRepo)
-	usersHandler := users.NewHandler(usersService)
+	usersHandler := users.NewHandler(usersService, jwtService)
 	usersHandler.Setup(mux)
 
 	addressesRepo := addresses.NewRepo(db.GetConnection())
@@ -36,8 +37,6 @@ func Setup() {
 	productsService := products.NewService(productsRepo, imagesService)
 	productsHandler := products.NewHandler(productsService)
 	productsHandler.Setup(mux)
-
-	jwtService := security.NewJWTService()
 
 	mainHandler := jwtService.SetUserContext(mux)
 	http.ListenAndServe(":3000", security.Cors(mainHandler))

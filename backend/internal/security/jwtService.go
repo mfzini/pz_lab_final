@@ -12,7 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type jwtService struct {
+type JwtService struct {
 }
 
 type Claims struct {
@@ -20,11 +20,11 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func NewJWTService() *jwtService {
-	return &jwtService{}
+func NewJWTService() *JwtService {
+	return &JwtService{}
 }
 
-func (this *jwtService) SetUserContext(next http.Handler) http.Handler {
+func (this *JwtService) SetUserContext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := this.extractToken(r)
 		claims, err := this.getClaims(token)
@@ -38,13 +38,13 @@ func (this *jwtService) SetUserContext(next http.Handler) http.Handler {
 	})
 }
 
-func (this *jwtService) extractToken(r *http.Request) string {
+func (this *JwtService) extractToken(r *http.Request) string {
 	header := r.Header.Get("Authorization")
 	token, _ := strings.CutPrefix(header, "Bearer ")
 	return token
 }
 
-func (this *jwtService) getClaims(token string) (*Claims, error) {
+func (this *JwtService) getClaims(token string) (*Claims, error) {
 	t, err := jwt.ParseWithClaims(token, &Claims{}, func(t *jwt.Token) (any, error) {
 		if t.Method != jwt.SigningMethodHS256 {
 			return nil, errors.New("Wrong signing method!")
@@ -57,7 +57,7 @@ func (this *jwtService) getClaims(token string) (*Claims, error) {
 	return t.Claims.(*Claims), nil
 }
 
-func (this *jwtService) GenerateToken(id string, role Role) string {
+func (this *JwtService) GenerateToken(id string, role Role) string {
 
 	timestamp := time.Now().UTC()
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{

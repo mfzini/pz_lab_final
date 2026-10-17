@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 	"example/internal/api"
+	"example/internal/security"
 	"net/http"
 	"net/mail"
 	"uuid"
@@ -66,4 +67,11 @@ func (this *Service) AdminExists() bool {
 	r := this.repo.db.QueryRow(context.Background(), "select count(*) from users where role = 'admin';")
 	r.Scan(&count)
 	return count > 0
+}
+
+func (this *Service) UpdateRole(ctx context.Context, id string, role security.Role) *api.Error {
+	if err := this.repo.updateField(ctx, "role", string(role), id); err != nil {
+		return api.NewGenericError(err)
+	}
+	return nil
 }

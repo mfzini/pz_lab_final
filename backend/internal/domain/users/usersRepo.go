@@ -37,7 +37,7 @@ func (this *repo) create(u *Model) error {
 }
 
 func (this *repo) updateField(ctx context.Context, field string, value any, id string) error {
-	query := fmt.Sprint("update users set %s = $1, updated_at = $2 where id = $3", field)
+	query := fmt.Sprintf("update users set %s = $1, updated_at = $2 where id = $3", field)
 	_, err := this.db.Exec(ctx, query, value, time.Now(), id)
 	return err
 }

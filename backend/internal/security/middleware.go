@@ -5,7 +5,7 @@ import (
 )
 
 func OnlyAdmin(next http.HandlerFunc) http.HandlerFunc {
-	return Allow([]Role{Admin, User}, next)
+	return Allow([]Role{Admin}, next)
 }
 
 func AllowClients(next http.HandlerFunc) http.HandlerFunc {
