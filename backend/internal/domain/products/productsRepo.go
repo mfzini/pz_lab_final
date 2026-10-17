@@ -32,19 +32,20 @@ func (this *repo) create(ctx context.Context, product *Model) error {
 		"product_name": product.Name,
 		"price":        product.Price,
 		"portrait":     product.Portrait,
-		"amount":       product.Amount,
 	})
 	return err
 }
 
 func (this *repo) update(ctx context.Context, product *Model) error {
-	query := `update products set name = $1, price = $2, amount = $3, updated_at=$4`
+	query := `update products set name = $1, price = $2, portrait = $3 updated_at=$4 where id = $5`
 	timestamp := time.Now()
 	_, err := this.db.Exec(ctx, query,
 		product.Name,
 		product.Price,
-		product.Amount,
-		timestamp)
+		product.Portrait,
+		timestamp,
+		product.Id,
+	)
 	if err == nil {
 		product.UpdatedAt = &timestamp
 	}
@@ -59,15 +60,6 @@ func (this *repo) delete(ctx context.Context, product *Model) error {
 		product.DeletedAt = &timestamp
 	}
 	return err
-}
-
-func (this *repo) findByName(ctx context.Context, name string) ([]*Model, error) {
-	query := `select * from products where name ilike $1`
-	r, err := this.db.Query(ctx, query, "%"+name+"%")
-	if err != nil {
-		return nil, err
-	}
-	return pgx.CollectRows(r, pgx.RowToAddrOfStructByName[Model])
 }
 
 func (this *repo) findById(ctx context.Context, id string) (*Model, error) {

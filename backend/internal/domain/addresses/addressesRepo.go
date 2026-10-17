@@ -17,23 +17,14 @@ func NewRepo(db *pgx.Conn) *repo {
 	return &repo{db}
 }
 
-func (this *repo) create(address *Model) error {
-	query := `insert into addresses (id, street, house, door, floor, coordinates)
-		values (@id, @street, @house, @door, @floor, @coordinates);`
-
-	_, err := this.db.Exec(context.Background(), query,
-		&pgx.NamedArgs{
-			"id":          address.Id,
-			"street":      address.Street,
-			"house":       address.House,
-			"door":        address.Door,
-			"floor":       address.Floor,
-			"coordinates": address.Coordinates,
-		})
+func (this *repo) create(ctx context.Context, address *Model) error {
+	query := `insert into addresses (id, user_id, street, house, door, floor, coordinates)
+		values ($1, $2, $3, $4, $5, $6, $7);`
+	_, err := this.db.Exec(ctx, query, address.ID, address.User_ID, address.Street, address.House, address.Door, address.Floor, address.Coordinates)
 	return err
 }
 
-func (this *repo) update(address *Model) error {
+func (this *repo) update(ctx context.Context, address *Model) error {
 	query := `update addresses set
 		street = @street,
 		house = @house,
@@ -49,6 +40,7 @@ func (this *repo) update(address *Model) error {
 		"door":        address.Door,
 		"floor":       address.Floor,
 		"coordinates": address.Coordinates,
+		"id":          address.ID,
 		"now":         timestamp,
 	})
 	if err == nil {
@@ -60,7 +52,7 @@ func (this *repo) update(address *Model) error {
 func (this *repo) delete(ctx context.Context, address *Model) error {
 	query := "update addresses set deleted_at = $1 where id = $2"
 	timestamp := time.Now()
-	_, err := this.db.Exec(ctx, query, timestamp, address.Id)
+	_, err := this.db.Exec(ctx, query, timestamp, address.ID)
 	if err == nil {
 		address.DeletedAt = &timestamp
 	}
@@ -88,10 +80,9 @@ func (this *repo) FindByStreetAndHouse(ctx context.Context, street, house string
 }
 
 func (this *repo) FindByUserID(ctx context.Context, id string) ([]*Model, error) {
-	query := `select a.id, a.street, a.house, a.coordinates::text as coordinates, a.floor, a.door, a.created_at, a.updated_at, a.deleted_at 
+	query := `select a.*, a.coordinates::text as coordinates
 		from addresses a
-		join users_addresses ua on ua.address_id = a.id
-		where ua.user_id = $1`
+		where a.user_id = $1`
 	r, err := this.db.Query(ctx, query, id)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

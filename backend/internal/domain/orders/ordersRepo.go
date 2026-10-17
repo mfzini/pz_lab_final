@@ -25,7 +25,7 @@ func (this *repo) create(ctx context.Context, order *Model) error {
 	defer tx.Rollback(ctx)
 	batch := &pgx.Batch{}
 	query := "insert into orders (id, client_id, address_id, detail) values ($1, $2, $3, $4);"
-	batch.Queue(query, order.Id, order.Client.Id, order.Address.Id, order.Detail)
+	batch.Queue(query, order.Id, order.Client.Id, order.Detail)
 
 	for _, product := range order.Products {
 		query := `insert into orders_products (order_id, product_id, amount, ppu) values
@@ -53,7 +53,7 @@ func (this *repo) findById(ctx context.Context, id string) (*Model, error) {
 	order := &Model{Total: 0}
 	user := &users.Model{}
 	address := &addresses.Model{}
-	err := row.Scan(&order.Id, &user.Id, &address.Id, &order.Detail,
+	err := row.Scan(&order.Id, &user.Id, &address.ID, &order.Detail,
 		&user.Name, &user.Surname, &user.Phone, &user.Email,
 		&address.Street, &address.House, &address.Door, &address.Floor, &address.Detail, &address.Coordinates)
 	if err != nil {
@@ -85,7 +85,7 @@ func (this *repo) findByuserID(ctx context.Context, id string) ([]*Model, error)
 	for rows.Next() {
 		order := &Model{Total: 0}
 		address := &addresses.Model{}
-		err := rows.Scan(&order.Id, &user.Id, &address.Id, &order.Detail,
+		err := rows.Scan(&order.Id, &user.Id, &address.ID, &order.Detail,
 			&user.Name, &user.Surname, &user.Phone, &user.Email,
 			&address.Street, &address.House, &address.Door, &address.Floor, &address.Detail, &address.Coordinates)
 		if err != nil {

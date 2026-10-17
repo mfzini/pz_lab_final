@@ -6,7 +6,6 @@ import (
 	"example/internal/domain/images"
 	"example/internal/domain/products"
 	"example/internal/domain/users"
-	"example/internal/middleware"
 	"example/internal/security"
 	"os"
 
@@ -38,10 +37,8 @@ func Setup() {
 	productsHandler := products.NewHandler(productsService)
 	productsHandler.Setup(mux)
 
-	jwtService := security.NewJWTService(usersService)
-	loginHandler := security.NewAuthHandler(usersService, jwtService)
-	loginHandler.Setup(mux)
+	jwtService := security.NewJWTService()
 
 	mainHandler := jwtService.SetUserContext(mux)
-	http.ListenAndServe(":3000", middleware.Cors(mainHandler))
+	http.ListenAndServe(":3000", security.Cors(mainHandler))
 }

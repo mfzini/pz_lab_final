@@ -3,8 +3,9 @@ package addresses
 import "example/internal/domain/common"
 
 type Model struct {
-	Id,
-	Street,
+	ID,
+	User_ID,
+	Street string
 	House,
 	Floor *int
 	Coordinates,

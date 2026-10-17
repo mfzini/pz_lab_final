@@ -2,8 +2,9 @@ package users
 
 import (
 	"context"
-	"example/internal/apiErrors"
+	"example/internal/api"
 	"net/http"
+	"net/mail"
 	"uuid"
 )
 
@@ -15,37 +16,42 @@ func NewService(repo *repo) *Service {
 	return &Service{repo}
 }
 
-func (this *Service) Create(user *Model) *apiErrors.Error {
+func (this *Service) Create(user *Model) *api.Error {
 	if user.Id == "" {
 		user.Id = uuid.NewV7().String()
 	}
 	if user.Name == "" {
-		return apiErrors.New("El nombre no puede estar vacio.", http.StatusBadRequest)
+		return api.NewError("El nombre no puede estar vacio.", http.StatusBadRequest)
 	}
 	if user.Surname == "" {
-		return apiErrors.New("El apellido no puede estar vacio.", http.StatusBadRequest)
+		return api.NewError("El apellido no puede estar vacio.", http.StatusBadRequest)
 	}
 	if user.Email == "" {
-		return apiErrors.New("El email no puede estar vacio.", http.StatusBadRequest)
+		return api.NewError("El email no puede estar vacio.", http.StatusBadRequest)
+	}
+	if _, err := mail.ParseAddress(user.Email); err != nil {
+		return api.NewError("Formato de email no válido.", http.StatusBadRequest)
 	}
 
 	if exists, _ := this.repo.FindByEmail(user.Email); exists != nil {
-		return apiErrors.New("Email no válido.", http.StatusNotAcceptable)
+		return api.NewError("Email no válido.", http.StatusNotAcceptable)
 	}
 
-	user.hashPassword()
+	if err := user.hashPassword(); err != nil {
+		return api.NewError("No se pudo procesar la contraseña.", http.StatusInternalServerError)
+	}
 	if err := this.repo.create(user); err != nil {
-		return apiErrors.Generic(err)
+		return api.NewGenericError(err)
 	}
 
 	return nil
 }
 
-func (this *Service) Update(user *Model, shouldHashPassword bool) error {
-	if shouldHashPassword {
-		user.hashPassword()
+func (this *Service) Update(ctx context.Context, id string, user *Model) *api.Error {
+	if err := this.repo.update(user); err != nil {
+		return api.NewGenericError(err)
 	}
-	return this.repo.update(user)
+	return nil
 }
 
 func (this *Service) FindById(id string) (*Model, error) {

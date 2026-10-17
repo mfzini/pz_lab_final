@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -35,28 +36,24 @@ func (this *repo) create(u *Model) error {
 	return err
 }
 
+func (this *repo) updateField(ctx context.Context, field string, value any, id string) error {
+	query := fmt.Sprint("update users set %s = $1, updated_at = $2 where id = $3", field)
+	_, err := this.db.Exec(ctx, query, value, time.Now(), id)
+	return err
+}
+
 func (this *repo) update(u *Model) error {
 	query := `update users set
 	name = @name,
 	surname = @surname,
-	email = @email,
-	phone = @phone,
-	role = @role,
-	avatar = @avatar,
-	password = @password,
 	updated_at = @now
 	where id = @id`
 	timestamp := time.Now()
 	_, err := this.db.Exec(context.Background(), query, &pgx.NamedArgs{
-		"name":     u.Name,
-		"surname":  u.Surname,
-		"email":    u.Email,
-		"phone":    u.Phone,
-		"role":     u.Role,
-		"avatar":   u.Avatar,
-		"password": u.Password,
-		"now":      timestamp,
-		"id":       u.Id,
+		"name":    u.Name,
+		"surname": u.Surname,
+		"now":     timestamp,
+		"id":      u.Id,
 	})
 	if err == nil {
 		u.UpdatedAt = &timestamp

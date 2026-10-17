@@ -2,7 +2,7 @@ package products
 
 import (
 	"context"
-	"example/internal/apiErrors"
+	"example/internal/api"
 	"example/internal/domain/images"
 	"fmt"
 	"mime/multipart"
@@ -19,18 +19,33 @@ func NewService(repo *repo, imagesService *images.Service) *Service {
 	return &Service{repo, imagesService}
 }
 
-func (this *Service) Create(ctx context.Context, product *Model, img multipart.File) *apiErrors.Error {
+func (this *Service) Create(ctx context.Context, product *Model, img multipart.File) *api.Error {
 	if product.Price <= 0 {
-		return apiErrors.New("Estas perdiendo plata!", http.StatusBadRequest)
+		return api.NewError("Estas perdiendo plata!", http.StatusBadRequest)
 	}
 	hash, err := this.imagesService.Save(img)
 	if err != nil {
-		return apiErrors.Generic(err)
+		return api.NewGenericError(err)
 	}
 	product.Id = uuid.NewV7().String()
 	product.Portrait = fmt.Sprintf("/uploads/%s", hash)
 	if err := this.repo.create(ctx, product); err != nil {
-		return apiErrors.Generic(err)
+		return api.NewGenericError(err)
+	}
+	return nil
+}
+
+func (this *Service) Update(ctx context.Context, product *Model, img multipart.File) *api.Error {
+	if product.Price <= 0 {
+		return api.NewError("Estas perdiendo plata!", http.StatusBadRequest)
+	}
+	hash, err := this.imagesService.Save(img)
+	if err != nil {
+		return api.NewGenericError(err)
+	}
+	product.Portrait = fmt.Sprintf("/uploads/%s", hash)
+	if err := this.repo.update(ctx, product); err != nil {
+		return api.NewGenericError(err)
 	}
 	return nil
 }

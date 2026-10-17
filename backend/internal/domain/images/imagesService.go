@@ -3,12 +3,10 @@ package images
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"example/internal/apiErrors"
-	"fmt"
+	"example/internal/api"
 	"io"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -21,15 +19,13 @@ func NewService(repo *Repo) *Service {
 }
 
 func Sha256(img multipart.File) (string, error) {
-	hasher := sha256.New()
 	img.Seek(0, io.SeekStart)
+	hasher := sha256.New()
 	if _, err := io.Copy(hasher, img); err != nil {
-		fmt.Fprintln(os.Stderr, err)
 		return "", err
 	}
 	img.Seek(0, io.SeekStart)
-	hash := hasher.Sum(nil)
-	return hex.EncodeToString(hash), nil
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 func (this *Service) IsImage(img multipart.File) bool {
@@ -44,7 +40,7 @@ func (this *Service) IsImage(img multipart.File) bool {
 
 func (this *Service) Save(img multipart.File) (string, error) {
 	if !this.IsImage(img) {
-		return "", apiErrors.New("Solo se admiten imágenes", http.StatusBadRequest)
+		return "", api.NewError("Solo se admiten imágenes", http.StatusBadRequest)
 	}
 
 	hash, err := Sha256(img)

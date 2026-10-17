@@ -14,7 +14,7 @@ type handler struct {
 	service *Service
 }
 type orderRequest struct {
-	Dishes []string
+	productes []*Model
 }
 
 func NewHandler(service *Service) *handler {
@@ -22,15 +22,35 @@ func NewHandler(service *Service) *handler {
 }
 
 func (this *handler) Setup(mux *http.ServeMux) {
-
 	mux.HandleFunc("POST /platos", security.OnlyAdmin(this.postProduct))
 	mux.HandleFunc("GET /platos/list", this.list)
-	mux.HandleFunc("GET /platos/{id}", this.getDish)
+	mux.HandleFunc("GET /platos/{id}", this.getproduct)
+	mux.HandleFunc("PATCH /platos/{id}", security.OnlyAdmin(this.getproduct))
+}
+
+func (this *handler) updateProduct(w http.ResponseWriter, r *http.Request) {
+	product := &Model{}
+	if err := json.Unmarshal([]byte(r.FormValue("product")), product); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	file, _, err := r.FormFile("picture")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+	if err = this.service.Update(r.Context(), product, file); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	json.NewEncoder(w).Encode(product)
 }
 
 func (this *handler) postProduct(w http.ResponseWriter, r *http.Request) {
-	dish := &Model{}
-	if err := json.Unmarshal([]byte(r.FormValue("dish")), dish); err != nil {
+	product := &Model{}
+	if err := json.Unmarshal([]byte(r.FormValue("product")), product); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -43,20 +63,20 @@ func (this *handler) postProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	err = this.service.Create(r.Context(), dish, file)
+	err = this.service.Create(r.Context(), product, file)
 
 	w.WriteHeader(201)
-	json.NewEncoder(w).Encode(dish)
+	json.NewEncoder(w).Encode(product)
 }
 
-func (this *handler) getDish(w http.ResponseWriter, r *http.Request) {
+func (this *handler) getproduct(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	dish, err := this.service.FindById(r.Context(), id)
+	product, err := this.service.FindById(r.Context(), id)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-	json.NewEncoder(w).Encode(dish)
+	json.NewEncoder(w).Encode(product)
 }
 
 func (this *handler) list(w http.ResponseWriter, r *http.Request) {

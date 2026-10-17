@@ -3,7 +3,6 @@ package security
 import (
 	"context"
 	"errors"
-	"example/internal/domain/users"
 	"fmt"
 	"net/http"
 	"os"
@@ -14,16 +13,15 @@ import (
 )
 
 type jwtService struct {
-	userService *users.Service
 }
 
 type Claims struct {
-	Role string
+	Role
 	jwt.RegisteredClaims
 }
 
-func NewJWTService(usersService *users.Service) *jwtService {
-	return &jwtService{usersService}
+func NewJWTService() *jwtService {
+	return &jwtService{}
 }
 
 func (this *jwtService) SetUserContext(next http.Handler) http.Handler {
@@ -35,18 +33,7 @@ func (this *jwtService) SetUserContext(next http.Handler) http.Handler {
 			return
 		}
 
-		userId, err := claims.GetSubject()
-		if err != nil {
-			next.ServeHTTP(w, r)
-			return
-		}
-		user, err := this.userService.FindById(userId)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		rwc := r.WithContext(context.WithValue(r.Context(), "user", user))
+		rwc := r.WithContext(context.WithValue(r.Context(), "claims", claims))
 		next.ServeHTTP(w, rwc)
 	})
 }
@@ -57,7 +44,7 @@ func (this *jwtService) extractToken(r *http.Request) string {
 	return token
 }
 
-func (this *jwtService) getClaims(token string) (jwt.Claims, error) {
+func (this *jwtService) getClaims(token string) (*Claims, error) {
 	t, err := jwt.ParseWithClaims(token, &Claims{}, func(t *jwt.Token) (any, error) {
 		if t.Method != jwt.SigningMethodHS256 {
 			return nil, errors.New("Wrong signing method!")
@@ -67,10 +54,10 @@ func (this *jwtService) getClaims(token string) (jwt.Claims, error) {
 	if err != nil {
 		return nil, err
 	}
-	return t.Claims, nil
+	return t.Claims.(*Claims), nil
 }
 
-func (this *jwtService) GenerateToken(user *users.Model) string {
+func (this *jwtService) GenerateToken(id string, role Role) string {
 
 	timestamp := time.Now().UTC()
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
@@ -78,8 +65,8 @@ func (this *jwtService) GenerateToken(user *users.Model) string {
 		Audience:  jwt.ClaimStrings{"user"},
 		IssuedAt:  jwt.NewNumericDate(timestamp),
 		ExpiresAt: jwt.NewNumericDate(timestamp.AddDate(0, 0, 7)),
-		Subject:   user.Id,
-		Role:      user.Role,
+		Subject:   id,
+		Role:      role,
 	})
 	token, err := t.SignedString([]byte("secret"))
 	if err != nil {
