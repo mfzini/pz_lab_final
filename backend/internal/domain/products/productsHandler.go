@@ -2,17 +2,20 @@ package products
 
 import (
 	"encoding/json"
-	"example/internal/domain/common"
-	"example/internal/security"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
+
+	"example/internal/api"
+	"example/internal/domain/common"
+	"example/internal/security"
 )
 
 type handler struct {
 	service *Service
 }
+
 type orderRequest struct {
 	productes []*Model
 }
@@ -25,7 +28,7 @@ func (this *handler) Setup(mux *http.ServeMux) {
 	mux.HandleFunc("POST /platos", security.OnlyAdmin(this.postProduct))
 	mux.HandleFunc("GET /platos/list", this.list)
 	mux.HandleFunc("GET /platos/{id}", this.getproduct)
-	mux.HandleFunc("PATCH /platos/{id}", security.OnlyAdmin(this.getproduct))
+	mux.HandleFunc("PATCH /platos/{id}", security.OnlyAdmin(this.updateProduct))
 }
 
 func (this *handler) updateProduct(w http.ResponseWriter, r *http.Request) {
@@ -35,17 +38,25 @@ func (this *handler) updateProduct(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	// El id sale del path: lo que mande el body no decide a qué plato se le pega.
+	product.Id = r.PathValue("id")
+
+	// La foto es opcional al editar: sin archivo, el service mantiene la actual.
 	file, _, err := r.FormFile("picture")
-	if err != nil {
+	if err != nil && !errors.Is(err, http.ErrMissingFile) {
 		fmt.Fprintln(os.Stderr, err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
-	if err = this.service.Update(r.Context(), product, file); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	if file != nil {
+		defer file.Close()
 	}
-	json.NewEncoder(w).Encode(product)
+
+	if err := this.service.Update(r.Context(), product, file); err != nil {
+		api.WriteJson(w, err, err.StatusCode)
+		return
+	}
+	api.WriteJson(w, product, http.StatusOK)
 }
 
 func (this *handler) postProduct(w http.ResponseWriter, r *http.Request) {
@@ -63,43 +74,38 @@ func (this *handler) postProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	err = this.service.Create(r.Context(), product, file)
-
-	w.WriteHeader(201)
-	json.NewEncoder(w).Encode(product)
+	if err := this.service.Create(r.Context(), product, file); err != nil {
+		api.WriteJson(w, err, err.StatusCode)
+		return
+	}
+	api.WriteJson(w, product, http.StatusCreated)
 }
 
 func (this *handler) getproduct(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	product, err := this.service.FindById(r.Context(), id)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		w.WriteHeader(http.StatusInternalServerError)
+		api.WriteJson(w, err, err.StatusCode)
+		return
 	}
-	json.NewEncoder(w).Encode(product)
+	api.WriteJson(w, product, http.StatusOK)
 }
 
 func (this *handler) list(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-
-	page, err := strconv.Atoi(query.Get("page"))
-	if err != nil {
-		page = 1
-	}
-	size, err := strconv.Atoi(query.Get("size"))
-	if err != nil {
-		size = 10
-	}
+	page, size := common.PageParams(query)
 	name := query.Get("name")
 	sortBy := query.Get("sortby")
 
-	if list, pages, err := this.service.List(r.Context(), name, sortBy, page, size); err != nil {
-		fmt.Println(err)
+	list, pages, err := this.service.List(r.Context(), name, sortBy, page, size)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		w.WriteHeader(http.StatusInternalServerError)
-	} else {
-		json.NewEncoder(w).Encode(&common.PageResponse[*Model]{
-			Data:        list,
-			CurrentPage: page,
-			TotalPages:  pages})
+		return
 	}
+	api.WriteJson(w, &common.PageResponse[*Model]{
+		Data:        list,
+		CurrentPage: page,
+		TotalPages:  pages,
+	}, http.StatusOK)
 }

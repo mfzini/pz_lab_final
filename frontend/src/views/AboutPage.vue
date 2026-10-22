@@ -8,8 +8,8 @@
 
 </template>
 
-<style lang="css">
+<style scoped>
 h1 {
-    color: red;
+  color: red;
 }
 </style>

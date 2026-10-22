@@ -1,138 +1,100 @@
-set timezone = '-03:00';
+-- ============================================================================
+-- Esquema del backend.
+-- Lo que los repos de Go tocan: users, addresses, categories, products,
+-- orders y orders_products (6 tablas).
+--
+-- Reset total (borra tablas y data):
+--   drop table if exists orders_products, orders, products, categories,
+--     addresses, users cascade;
+--
+-- Ejecutar:
+--   psql -U postgres -d example -f cmd/seeder/script_pg.sql
+--
+-- Nota: con timestamptz no hace falta setear timezone en la sesión.
+-- ============================================================================
 
+-- users <- usersRepo: create (id, name, surname, email, phone, password),
+-- update (name, surname), updateField (role), soft delete (deleted_at), select *
 create table if not exists users(
     id uuid primary key default gen_random_uuid(),
     name varchar(36) not null,
     surname varchar(36) not null,
-    email varchar(36) unique not null,
+    email varchar(60) unique not null,
     phone varchar(20),
     avatar varchar(250),
-    role varchar(16) default 'client',
-    created_at timestamp default now(),
-    updated_at timestamp,
-    deleted_at timestamp
+    role varchar(16) not null default 'client',
+    password varchar(255) not null,      -- bcrypt ocupa 60
+    created_at timestamptz not null default now(),
+    updated_at timestamptz,
+    deleted_at timestamptz
 );
 
+-- addresses <- addressesRepo: create (id, user_id, street, house, door, floor,
+-- coordinates), update (...), soft delete, FindById, FindByStreetAndHouse,
+-- FindByUserID (where user_id = $1).
 create table if not exists addresses(
     id uuid primary key default gen_random_uuid(),
+    user_id uuid not null references users(id),
     street varchar(36) not null,
-    house varchar(10) not null,
+    house varchar(10) not null,           -- texto: "12", "12B", "s/n"
     floor int,
     door varchar(5),
-    coordinates point,
+    coordinates point,                   -- el código lo escribe como texto "x,y"
     detail text,
-    created_at timestamp default now(),
-    updated_at timestamp,
-    deleted_at timestamp
+    created_at timestamptz not null default now(),
+    updated_at timestamptz,
+    deleted_at timestamptz
 );
 
-create table if not exists users_addresses(
-    user_id uuid not null,
-    constraint fk_users_addresses_user foreign key (user_id) references users(id),
-    address_id uuid not null,
-    constraint fk_users_addresses_address foreign key (address_id) references addresses(id),
-    created_at timestamp default now(),
-    updated_at timestamp,
-    deleted_at timestamp
+create index if not exists addresses_user_id_idx on addresses(user_id);
+
+-- categories <- categoriesRepo: maestra chica (nombre único). Platos N:1
+-- categorías: es la 6ª tabla y da la relación N:1 con products.
+create table if not exists categories(
+    id uuid primary key default gen_random_uuid(),
+    name varchar(40) unique not null,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz,
+    deleted_at timestamptz
 );
 
-create table if not exists users(
-    user_id uuid primary key,
-    constraint fk_users_user foreign key (user_id) references users(id),
-    username varchar(20) not null,
-    password varchar(255) not null,
-    created_at timestamp default now(),
-    updated_at timestamp,
-    deleted_at timestamp
-);
-
+-- products <- productsRepo: create (id, name, price, portrait, category_id),
+-- update (con coalesce en portrait), soft delete, list/findById con join a
+-- categories (p.category_id, c.name as category_name).
 create table if not exists products(
     id uuid primary key default gen_random_uuid(),
     name varchar(36) unique not null,
-    price decimal(10,2) not null,
+    price int not null,                  -- centavos: 1250 = $12,50 (Go no usa decimales)
     portrait varchar(250),
-    amount int default 0,
-    created_at timestamp default now(),
-    updated_at timestamp,
-    deleted_at timestamp
+    amount int not null default 0,
+    category_id uuid references categories(id),  -- anulable: plato sin categoría
+    created_at timestamptz not null default now(),
+    updated_at timestamptz,
+    deleted_at timestamptz
 );
 
+-- orders <- ordersRepo: create (id, client_id, address_id, detail, status),
+-- findById/findByuserID (select o.status), updateStatus (update status).
 create table if not exists orders(
     id uuid primary key default gen_random_uuid(),
-    client_id uuid,
-    constraint fk_orders_client foreign key (client_id) references users(id),
-    address uuid,
-    constraint fk_order_address foreign key (address) references addresses(id),
+    client_id uuid not null references users(id),
+    address_id uuid not null references addresses(id),
     detail text,
-    status varchar(30),
-    created_at timestamp default now(),
-    updated_at timestamp,
-    deleted_at timestamp
+    -- pendiente -> en proceso -> despachada
+    status varchar(16) not null default 'pending'
+        check (status in ('pending', 'preparing', 'shipped')),
+    created_at timestamptz not null default now(),
+    updated_at timestamptz                -- cuándo cambió de estado la última vez
 );
 
+create index if not exists orders_client_id_idx on orders(client_id);
+
+-- orders_products <- ordersRepo: insert (order_id, product_id, amount, ppu) y
+-- fetchProducts (od.amount, od.ppu). La PK evita repetir el mismo plato.
 create table if not exists orders_products(
-    order_id uuid,
-    constraint fk_order_products_order foreign key (order_id) references orders(id),
-    product_id uuid,
-    constraint fk_order_products_product foreign key (product_id) references products(id),
-    ppu decimal(10, 2),
-    amount int default 1
-);
-
-
------------------------------------------------------------------------------------------------------------------------------
-
-
-create table if not exists products_ingredients(
-    product_id uuid not null,
-    constraint fk_products_ingredients_product foreign key (product_id) references products(id),
-    ingredient_id uuid not null,
-    constraint fk_products_ingredients_ingredient foreign key (ingredient_id) references ingredients(id),
-    amount decimal(4,3) not null
-);
-
-create table if not exists orders_status(
-    id uuid primary key default gen_random_uuid(),
-    name varchar(20) not null,
-    created_at timestamp default now(),
-    updated_at timestamp,
-    deleted_at timestamp
-);
-
-
-
-create table if not exists status_orders(
-    order_id uuid not null,
-    constraint fk_status_orders_order foreign key (order_id) references orders(id),
-    status uuid not null,
-    constraint fk_status_orders_status foreign key (status) references orders_status(id),
-    created_at timestamp default now(),
-    updated_at timestamp,
-    deleted_at timestamp
-);
-
-create table if not exists ingredients(
-    id uuid primary key default gen_random_uuid(),
-    name varchar(36) not null,
-    stock decimal(6,3) not null,
-    created_at timestamp default now(),
-    updated_at timestamp,
-    deleted_at timestamp
-);
-
-create table if not exists images(
-    id uuid primary key default gen_random_uuid(),
-    original_name varchar(255) not null,
-    sha256 varchar(64) not null,
-    mimetype varchar(10) not null,
-    created_at timestamp default now(),
-    updated_at timestamp,
-    deleted_at timestamp
-);
-
-create table if not exists products_images(
-    product_id uuid,
-    constraint fk_product_image foreign key (product_id) references products(id),
-    image_id uuid,
-    constraint fk_image_product foreign key (image_id) references images(id)
+    order_id uuid not null references orders(id),
+    product_id uuid not null references products(id),
+    amount int not null default 1,
+    ppu int not null,                    -- centavos, igual que products.price
+    primary key (order_id, product_id)
 );

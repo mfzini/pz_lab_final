@@ -2,6 +2,9 @@ package security
 
 import (
 	"net/http"
+	"slices"
+
+	"example/internal/api"
 )
 
 func OnlyAdmin(next http.HandlerFunc) http.HandlerFunc {
@@ -16,20 +19,16 @@ func Allow(roles []Role, next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		claims := GetClaimsFromContext(r.Context())
 		if claims == nil {
-			w.WriteHeader(http.StatusForbidden)
+			w.Header().Set("WWW-Authenticate", `Bearer`)
+			api.WriteJson(w, api.NewError("Se requiere autenticación.", http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
-		allow := false
-		for _, role := range roles {
-			if claims.Role == Role(role) {
-				allow = true
-				break
-			}
-		}
-		if !allow {
-			w.WriteHeader(http.StatusForbidden)
+
+		if slices.Contains(roles, claims.Role) {
+			next.ServeHTTP(w, r)
 			return
 		}
-		next.ServeHTTP(w, r)
+
+		api.WriteJson(w, api.NewError("No tenés permisos para esta operación.", http.StatusForbidden), http.StatusForbidden)
 	})
 }

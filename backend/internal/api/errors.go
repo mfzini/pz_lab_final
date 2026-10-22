@@ -7,9 +7,12 @@ import (
 	"os"
 )
 
+// Error es el error de negocio que viaja en la respuesta JSON: siempre como
+// {"error": "<mensaje>"}. El detalle interno queda en err (sin serializar).
 type Error struct {
 	err        error
-	StatusCode int `json:"-"`
+	Message    string `json:"error"`
+	StatusCode int    `json:"-"`
 }
 
 func (this *Error) Error() string {
@@ -18,11 +21,15 @@ func (this *Error) Error() string {
 
 func NewError(msg string, code int) *Error {
 	return &Error{
-		err: errors.New(msg), StatusCode: code,
+		err: errors.New(msg), Message: msg, StatusCode: code,
 	}
 }
 
+// NewGenericError es para fallas de infraestructura: loguea el detalle real y
+// devuelve un mensaje genérico (nada de errores de DB en la respuesta).
 func NewGenericError(err error) *Error {
 	fmt.Fprintln(os.Stderr, err)
-	return &Error{errors.New("Algo malió sal."), http.StatusInternalServerError}
+	return &Error{
+		err: errors.New("Algo malió sal."), Message: "Algo malió sal.", StatusCode: http.StatusInternalServerError,
+	}
 }

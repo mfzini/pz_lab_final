@@ -53,7 +53,9 @@ func (this *Service) Save(img multipart.File) (string, error) {
 		return "", err
 	}
 	if !exists {
-		this.Repo.saveToDisk(hash, img)
+		if err := this.Repo.saveToDisk(hash, img); err != nil {
+			return "", err
+		}
 	}
 	return hash, nil
 }

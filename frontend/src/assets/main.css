@@ -1,0 +1,368 @@
+/* ============================================================
+   Estilos globales de PZ Lab: variables, base y controles.
+   Cada vista agrega lo suyo con <style scoped>.
+   ============================================================ */
+
+:root {
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --text: #20242b;
+  --muted: #6b7280;
+  --border: #e6e2da;
+  --primary: #d94f2b;
+  --primary-dark: #b23a1a;
+  --danger: #c0392b;
+  --ok: #1f7a4d;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgb(32 36 43 / 8%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+main {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 1.25rem 3rem;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 1.5rem 0 0.75rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+  margin: 0 0 0.5rem;
+}
+
+small {
+  color: var(--muted);
+}
+
+a {
+  color: var(--primary);
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Controles ---------- */
+
+input,
+select,
+textarea {
+  font: inherit;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(217 79 43 / 15%);
+}
+
+button,
+.btn {
+  font: inherit;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+button:hover:not(:disabled),
+.btn:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  text-decoration: none;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Botón secundario: borde gris, sin fondo. */
+.btn-ghost,
+button.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-ghost:hover:not(:disabled),
+button.btn-ghost:hover:not(:disabled) {
+  background: #efece6;
+}
+
+/* ---------- Superficies ---------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+
+/* Formulario vertical centrado (login, registro, direcciones). */
+.form-column {
+  width: min(100%, 420px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-column label {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* ---------- Estados y mensajes ---------- */
+
+.error {
+  color: var(--danger);
+}
+
+.ok {
+  color: var(--ok);
+}
+
+.error,
+.ok {
+  margin: 1rem 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-pending {
+  background: #fdf3d7;
+  color: #97660d;
+}
+
+.badge-preparing {
+  background: #dbeafe;
+  color: #1e5b9a;
+}
+
+.badge-shipped {
+  background: #d1fae5;
+  color: #1f7a4d;
+}
+
+/* ---------- Grilla de platos (index y menú de pedidos) ---------- */
+
+.menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.plato {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.plato-foto img,
+.plato-foto .sin-foto {
+  height: 160px;
+  width: 100%;
+}
+
+.plato-foto img {
+  display: block;
+  object-fit: cover;
+}
+
+.sin-foto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #efece6;
+  color: var(--muted);
+}
+
+.plato-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.plato-nombre {
+  font-weight: 600;
+}
+
+.plato-precio {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* ---------- Paginación ---------- */
+
+.paginacion {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+
+/* ---------- Modal (compartido: historial, direcciones) ---------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(32 36 43 / 45%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 20;
+}
+
+.modal {
+  position: relative;
+  width: min(100%, 460px);
+  max-height: 85vh;
+  overflow: auto;
+  padding: 1.5rem;
+}
+
+.modal-cerrar {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.15rem 0.55rem;
+}
+
+.modal h2 {
+  margin-top: 0;
+  padding-right: 2.5rem;
+}
+
+.modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.modal label {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* Cada campo agrupa su label pegado al control: el aire del form queda
+   entre campos, no dentro de cada pareja label-input. */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* Pie del modal: ancho completo y botones alineados a la derecha. */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* ---------- Búsqueda asíncrona (dirección, categoría) ---------- */
+
+/* Sugerencias: lista corta que aparece bajo el input mientras se tipea. */
+.sugerencias {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0.3rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.sugerencias button {
+  display: block;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sugerencias button:hover {
+  background: var(--bg);
+}
+
+.sugerencias li + li {
+  margin-top: 0.15rem;
+}
+
+.sugerencia-vacia {
+  padding: 0.45rem 0.55rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ---------- Pie ---------- */
+
+.pie {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 2rem 0;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 640px) {
+  /* Menos aire lateral en pantallas chicas. */
+  main {
+    padding: 0 0.75rem 2rem;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+    margin-top: 1.25rem;
+  }
+
+  .modal {
+    padding: 1.25rem;
+  }
+}
